@@ -6,6 +6,11 @@ from flask import Flask, render_template, request, send_file, after_this_request
 from flask_cors import CORS
 from pydub import AudioSegment
 
+# --- DEBUGGING PRINTS ---
+print(f"Current Working Directory: {os.getcwd()}")
+print(f"Files in Current Directory: {os.listdir(os.getcwd())}")
+# ------------------------
+
 app = Flask(__name__)
 CORS(app) # Enable Cross-Origin requests so WordPress can talk to this API
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -29,7 +34,7 @@ def cleanup_file(filepath, delay=60):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return "Audio Converter API is ready! Use the /convert endpoint."
 
 @app.route('/convert', methods=['POST'])
 def convert():
