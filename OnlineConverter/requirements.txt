@@ -2,3 +2,4 @@ flask
 pydub
 gunicorn
 flask-cors
+pyaudioop
