@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sleek Audio Converter</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #333;
+            --accent-color: #667eea;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .container {
+            background: var(--glass-bg);
+            padding: 2rem 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            margin-bottom: 0.5rem;
+            color: #4a4a4a;
+        }
+
+        p.subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .upload-area {
+            display: block;
+            border: 2px dashed #a0aec0;
+            border-radius: 12px;
+            padding: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--accent-color);
+            background-color: #ebf4ff;
+            transform: scale(1.02);
+        }
+
+        .file-input {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            position: absolute;
+            z-index: -1;
+        }
+
+        .upload-icon {
+            font-size: 3.5rem;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .browse-btn-fake {
+            display: inline-block;
+            background-color: #e2e8f0;
+            color: #4a5568;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover .browse-btn-fake {
+            background-color: #cbd5e0;
+            color: #2d3748;
+        }
+
+        .controls {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ... skipped select ... */
+
+        button {
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            /* Pill shape */
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(118, 75, 162, 0.5);
+            filter: brightness(1.1);
+        }
+
+        /* ... */
+    </style>
+    <!-- GOOGLE ADSENSE PLACEHOLDER: Paste your script here -->
+    <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_ID_HERE" crossorigin="anonymous"></script> -->
+</head>
+
+<body>
+    <div class="container">
+        <h1>Audio Converter</h1>
+        <p class="subtitle">Fast, free, and secure online conversion</p>
+
+        <!-- Ad Unit Placeholder -->
+        <div
+            style="margin: 20px 0; padding:15px; border:1px dashed #ccc; background:rgba(255,255,255,0.5); text-align:center; color:#777;">
+            Google AdSense Banner Here
+            <!-- Paste your <ins> code here -->
+        </div>
+
+        <form id="convertForm">
+            <label class="upload-area" id="dropZone">
+                <input type="file" name="file" id="fileInput" class="file-input" accept="audio/*" required>
+                <div class="upload-icon">🎵</div>
+                <div style="font-weight: 500; font-size: 1.1rem;">Drag & Drop Audio File</div>
+                <div style="margin: 5px 0; color: #718096; font-size: 0.9rem;">— OR —</div>
+                <div class="browse-btn-fake">Browse Files</div>
+                <div id="file-name"></div>
+            </label>
+
+            <div class="controls">
+                <span>Convert to:</span>
+                <select name="format" id="formatSelect">
+                    <option value="mp3">MP3</option>
+                    <option value="wav">WAV</option>
+                    <option value="ogg">OGG</option>
+                    <option value="flac">FLAC</option>
+                    <option value="m4a">M4A</option>
+                </select>
+            </div>
+
+            <br>
+            <button type="submit" id="submitBtn">Convert Now</button>
+        </form>
+
+        <div id="status">
+            <div class="loading" id="spinner"></div>
+            <span id="statusText"></span>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('file-name');
+        const form = document.getElementById('convertForm');
+        const statusText = document.getElementById('statusText');
+        const spinner = document.getElementById('spinner');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Drag & Drop effects
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('dragover');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('dragover');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileName();
+        }
+
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            if (fileInput.files.length > 0) {
+                fileNameDisplay.textContent = fileInput.files[0].name;
+            } else {
+                fileNameDisplay.textContent = "";
+            }
+        }
+
+        // Handle Submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (fileInput.files.length === 0) {
+                statusText.textContent = "Please select a file first.";
+                statusText.style.color = "red";
+                return;
+            }
+
+            const formData = new FormData(form);
+
+            // UI State: Loading
+            submitBtn.disabled = true;
+            spinner.style.display = "inline-block";
+            statusText.textContent = "Uploading & Converting...";
+            statusText.style.color = "#666";
+
+            // Cold Start Message Timer
+            const coldStartTimer = setTimeout(() => {
+                statusText.textContent = "Waking up server (this may take 50s)... please wait!";
+                statusText.style.color = "#e67e22"; // Orange warning color
+            }, 2000);
+
+            try {
+                const response = await fetch('https://radaudi.onrender.com', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearTimeout(coldStartTimer); // Clear timer if it finished fast
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || "Conversion failed");
+                }
+
+                // Get filename from header or default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'converted_audio.' + formData.get('format');
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (match && match[1]) filename = match[1];
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                statusText.textContent = "Success! Download started.";
+                statusText.style.color = "green";
+
+            } catch (error) {
+                statusText.textContent = "Error: " + error.message;
+                statusText.style.color = "red";
+            } finally {
+                submitBtn.disabled = false;
+                spinner.style.display = "none";
+            }
+        });
+    </script>
+</body>
+
+</html>
